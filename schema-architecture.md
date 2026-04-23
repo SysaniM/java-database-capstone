@@ -1,5 +1,7 @@
+## Architecture summary
 This Spring Boot application uses both MVC and REST controllers. Thymeleaf templates are used to control Admin and Doctor dashboards, while REST APIs make all other modules functionable. The application interacts with two databases—MySQL (for structured data like doctors, admins and appointments) and MongoDB (for prescriptions). All controllers route requests through a common service layer, which in turn delegates to the appropriate repositories. MySQL uses JPA entities while MongoDB uses document models.
 
+## Numbered flow of data and control
 1. User get access to interfaces like dashboards or appointments
 2. Thymeleaf templates or REST API used according to chosen action
 3. Service layer provides business logic for chosen action
