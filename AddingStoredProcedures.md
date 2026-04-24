@@ -1,0 +1,37 @@
+## Daily Appointment Report by Doctor
+<pre>
++------------------+----------------------------+--------+----------------+---------------+
+| doctor_name      | appointment_time           | status | patient_name   | patient_phone |
++------------------+----------------------------+--------+----------------+---------------+
+| Dr. Ava Hall     | 2025-04-15 11:00:00.000000 |      1 | Lucas Turner   | 889-666-6666  |
+| Dr. Mark Johnson | 2025-04-15 12:00:00.000000 |      1 | Michael Jordan | 888-444-4444  |
+| Dr. Mark Johnson | 2025-04-15 13:00:00.000000 |      1 | Olivia Moon    | 888-555-5555  |
++------------------+----------------------------+--------+----------------+---------------+
+</pre>
+3 rows in set (0.01 sec)
+
+Query OK, 0 rows affected (0.01 sec)
+
+## Doctor with Most Patients By Month
+<pre>
++-----------+---------------+
+| doctor_id | patients_seen |
++-----------+---------------+
+|         2 |            31 |
++-----------+---------------+
+</pre>
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+## Doctor with Most Patients by Year
+<pre>
++-----------+---------------+
+| doctor_id | patients_seen |
++-----------+---------------+
+|         1 |            34 |
++-----------+---------------+
+</pre>
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
