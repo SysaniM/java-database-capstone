@@ -1,24 +1,33 @@
 package com.project.back_end.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
+import java.util.List;
+
 @Entity
-public class Doc {
+public class Doctor {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
     @NotNull
-    @size(min = 3, max = 100)
+    @Size(min = 3, max = 100)
     private String name;
 
     @NotNull
-    @size(min = 3, max = 50)
+    @Size(min = 3, max = 50)
     private String specialty;
 
     @Email
     @NotNull
     private String email;
 
-    @size(min=6)
+    @Size(min=6)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 

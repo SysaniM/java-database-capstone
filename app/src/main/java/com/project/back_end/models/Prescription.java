@@ -1,5 +1,10 @@
 package com.project.back_end.models;
 
+import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import org.springframework.data.mongodb.core.mapping.Document;
+
 @Document(collection = "prescriptions")
 public class Prescription {
 
@@ -25,11 +30,6 @@ public class Prescription {
     private String doctorNotes;
 
     public Prescription(){
-        this.patientName = "patientName";
-        this.medication = "medication";
-        this.dosage = "dosage";
-        this.doctorNotes = "doctorNotes";
-        this.appointmentId = 0;
     }
 
     public Prescription(String patientName, String medication, String dosage, String doctorNotes, long appointmentId){

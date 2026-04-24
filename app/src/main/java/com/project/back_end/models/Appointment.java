@@ -1,12 +1,16 @@
 package com.project.back_end.models;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.NotNull;
+
 import java.beans.Transient;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
-public class Admin {
+public class Appointment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
@@ -63,8 +67,8 @@ public class Admin {
         return appointmentTime;
     }
 
-    public void setAppointmentTime(LocalDateTime appointmenTime){
-        this.appointmenTime = appointmenTime;
+    public void setAppointmentTime(LocalDateTime appointmentTime){
+        this.appointmentTime = appointmentTime;
     }
 
     public int getStatus(){
