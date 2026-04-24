@@ -1,5 +1,88 @@
 /* This is the style sheet for the doctorDashboard.html */
-/* 
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; font-family: Arial, sans-serif; }
+
+.table-header{
+  font-size: 24px;
+  color: #015c5d;
+  margin-right: 0px;
+  margin-bottom: 30px;
+}
+
+table{
+  width: 100%;
+  border: none;
+  font-family: sans-serif;
+  margin-top: 20px;
+}
+
+thead{
+  background-color: #33333310;
+  color: #fff;
+}
+
+td, th{
+  padding: 12px 16px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Even rows (2nd, 4th, 6th, etc.) */
+tr:nth-child(even) {
+  background-color: #f9f9f959;
+}
+
+/* Odd rows (1st, 3rd, 5th, etc.) */
+tr:nth-child(odd) {
+  background-color: #ffffffc0;
+}
+
+/* Hover effect for all rows */
+tr:hover {
+  background-color: #015c5d39;
+}
+
+.prescription-btn {
+  /* Size */
+  width: 30px;
+  height: 30px;
+
+  /* Interactive */
+  cursor: pointer;
+}
+
+/* Hover effects */
+.prescription-btn:hover {
+  transform: scale(1.1);
+  filter: brightness(1.2); /* Brighten appearance */
+}
+
+/* Active/Click effect */
+.prescription-btn:active {
+  transform: scale(0.95);
+}
+
+.noPatientRecord{
+  font-size: 16px;
+  font-style: italic;
+  color: grey;
+}
+
+.today-btn {
+  margin-right: 10px;
+  padding: 10px;
+  background-color: #015c5d;
+}
+
+.date-picker {
+  margin-left: 10px;
+  margin-top: 13px;
+  border-radius: 8px;
+  padding: 10px;
+  height: 30px;
+}
+/*
 **Table Header (`.table-header`)**
 
 * Set font size to `24px` for clear emphasis.

@@ -1,5 +1,80 @@
 /*this is the style sheet for the adminDashboard. */
 
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; font-family: Arial, sans-serif; }
+
+.wrapper{
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.main-content{
+  flex-grow: 1;
+  padding: 40px;
+  justify-content: center;
+  align-items: center;
+  display: table-column;
+  text-align: center;
+  background-image: url('../assets/images/defineRole/index.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+h2{
+  font-size: 32px;
+  margin-bottom: 50px;
+  font-weight: bold;
+  font-family: Impact;
+  color: #003e3e ;
+}
+
+button{
+  background-color: #A62B1F;
+  border: none;
+  color:white;
+  padding: 10px 20px;
+  margin-top: 20px;
+  width: 200px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: #A62B1F;
+  border: none;
+  color:white;
+  padding: 10px 20px;
+  margin-top: 20px;
+  width: 200px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bolder;
+}
+
+.adminBtn{
+  background-color: #f4f4f4;
+  color: #333;
+  font-weight: bold;
+  width: 110px;
+  padding: 10px 0;
+  border: none;
+  cursor: pointer;
+}
+
+.adminBtn:hover{
+  background-color: #f4f4f4;
+  color: #A62B1F;
+  font-weight: bold;
+  width: 110px;
+  padding: 10px 0;
+  border: none;
+  cursor: pointer;
+}
+
 /* 
 Global Reset (`*`)
 
