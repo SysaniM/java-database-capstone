@@ -1,6 +1,11 @@
 package com.project.back_end.repo;
 
-public interface PatientRepository {
+@Repository
+public interface PatientRepository extends JpaRepository<Patient, Long> {
+    Patient findByEmail(String email);
+
+    @Query("SELECT p FROM Patient p WHERE p.email = :email OR p.phone = :phone")
+    Patient findByEmailOrPhone(@Param("email") String email, @Param("phone") String phone);
     // 1. Extend JpaRepository:
 //    - The repository extends JpaRepository<Patient, Long>, which provides basic CRUD functionality.
 //    - This allows the repository to perform operations like save, delete, update, and find without needing to implement these methods manually.

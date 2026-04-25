@@ -1,6 +1,15 @@
 package com.project.back_end.repo;
 
-public interface DoctorRepository {
+@Repository
+public interface DoctorRepository extends JpaRepository<Doctor, Long> {
+    Doctor findByEmail(String email);
+
+    @Query("SELECT d FROM Doctor d WHERE d.name LIKE CONCAT('%', :name, '%')")
+    List<Doctor> findByNameLike(@Param("name") String name);
+
+    List<Doctor> findByNameContainingIgnoreCaseAndSpecialtyIgnoreCase(String name, String specialty);
+
+    List<Doctor> findBySpecialtyIgnoreCase(String specialty);
    // 1. Extend JpaRepository:
 //    - The repository extends JpaRepository<Doctor, Long>, which gives it basic CRUD functionality.
 //    - This allows the repository to perform operations like save, delete, update, and find without needing to implement these methods manually.

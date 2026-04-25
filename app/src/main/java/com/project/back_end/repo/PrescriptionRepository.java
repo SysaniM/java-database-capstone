@@ -1,6 +1,8 @@
 package com.project.back_end.repo;
 
-public interface PrescriptionRepository  {
+@Repository
+public interface PrescriptionRepository extends MongoRepository<Prescription, String>  {
+    List<Prescription> findByAppointmentId(Long appointmentId);
 // 1. Extend MongoRepository:
 //    - The repository extends MongoRepository<Prescription, String>, which provides basic CRUD functionality for MongoDB.
 //    - This allows the repository to perform operations like save, delete, update, and find without needing to implement these methods manually.

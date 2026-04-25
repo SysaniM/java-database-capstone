@@ -32,7 +32,7 @@ public class DashboardController {
         if (isValid) {
             // Forward to doctor dashboard view
             return "doctor/doctorDashboard";
-         else {
+        } else {
             // Redirect to root URL if invalid
             return "redirect:/";
         }
