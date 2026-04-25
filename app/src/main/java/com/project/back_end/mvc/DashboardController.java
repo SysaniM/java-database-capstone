@@ -1,7 +1,43 @@
 package com.project.back_end.mvc;
 
+@Controller
 public class DashboardController {
 
+    private final Service sharedService;
+
+    @Autowired
+    public DashboardController(Service sharedService) {
+        this.sharedService = sharedService;
+    }
+
+    @GetMapping("/adminDashboard/{token}")
+    public String adminDashboard(@PathVariable String token) {
+        // Validate the token for admin role
+        boolean isValid = sharedService.validateToken(token, "admin");
+        
+        if (isValid) {
+            // Forward to admin dashboard view
+            return "admin/adminDashboard";
+        } else {
+            // Redirect to root URL if invalid
+            return "redirect:/";
+        }
+    }
+
+    @GetMapping("/doctorDashboard/{token}")
+    public String doctorDashboard(@PathVariable String token) {
+        // Validate the token for doctor role
+        boolean isValid = sharedService.validateToken(token, "doctor");
+        
+        if (isValid) {
+            // Forward to doctor dashboard view
+            return "doctor/doctorDashboard";
+         else {
+            // Redirect to root URL if invalid
+            return "redirect:/";
+        }
+    }
+}   
 // 1. Set Up the MVC Controller Class:
 //    - Annotate the class with `@Controller` to indicate that it serves as an MVC controller returning view names (not JSON).
 //    - This class handles routing to admin and doctor dashboard pages based on token validation.
@@ -25,6 +61,3 @@ public class DashboardController {
 //    - Validates the token using the shared service for the `"doctor"` role.
 //    - If the token is valid, forwards the user to the `"doctor/doctorDashboard"` view.
 //    - If the token is invalid, redirects to the root URL.
-
-
-}
