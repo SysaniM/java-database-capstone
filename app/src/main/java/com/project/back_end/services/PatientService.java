@@ -96,6 +96,34 @@ public class PatientService {
             return ResponseEntity.ok(response);
         }
     }
+
+    public ResponseEntity<Map<String, Object>> filterByDoctorAndCondition(String condition, String name, Long patientId){
+        Map<String, Object> response = new HashMap<>();
+        try{
+            List<Appointment> appointments;
+            if (condition.equals("past")){
+                appointments = appointmentRepository.filterByDoctorNameAndPatientIdAndStatus(name, patientId, 1);
+            } else{
+                appointments = appointmentRepository.filterByDoctorNameAndPatientIdAndStatus(name, patientId, 0);
+            }
+
+            response.put("status", "success");
+            response.put("message", "Returned " + appointments.size() + " doctor(s)");
+            response.put("appointments", appointments);
+            return ResponseEntity.ok(response);
+        } catch (Exception e){
+            response.put("message", "Error searching for appointments: " + e.getMessage());
+            response.put("doctors", List.of());
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    public ResponseEntity<Map<String, Object>> getPatientDetails(String token){
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Error searching for appointments: ");
+        response.put("doctors", List.of());
+        return ResponseEntity.ok(response);
+    }
 // 1. **Add @Service Annotation**:
 //    - The `@Service` annotation is used to mark this class as a Spring service component. 
 //    - It will be managed by Spring's container and used for business logic related to patients and appointments.
