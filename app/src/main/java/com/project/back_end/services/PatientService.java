@@ -1,6 +1,91 @@
 package com.project.back_end.services;
 
+import com.project.back_end.models.Appointment;
+import com.project.back_end.models.Doctor;
+import com.project.back_end.models.Patient;
+import com.project.back_end.repo.AppointmentRepository;
+import com.project.back_end.repo.PatientRepository;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Service
 public class PatientService {
+    private  PatientService patientService;
+    private PatientRepository patientRepository;
+    private AppointmentRepository appointmentRepository;
+    private TokenService tokenService;
+
+    public PatientService(PatientService patientService,
+                          PatientRepository patientRepository,
+                          AppointmentRepository appointmentRepository,
+                          TokenService tokenService){
+        this.patientService = patientService;
+        this.patientRepository = patientRepository;
+        this.appointmentRepository = appointmentRepository;
+        this.tokenService = tokenService;
+    }
+
+    public int createPatient(Patient patient){
+        try {
+            if(patientRepository.findByEmail(patient.getEmail()) == null){
+                patientRepository.save(patient);
+                return 1; // Success
+            } else{
+                return 0;
+            }
+        } catch (Exception e) {
+            // Log the exception (in production, use proper logging)
+            System.err.println("Error saving patient: " + e.getMessage());
+            return 0;
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<Map<String, Object>> getPatientAppointment(Long id, String token){
+        Map<String, Object> response = new HashMap<>();
+        try{
+            List<Appointment> appointments = appointmentRepository.findByPatientId(id);
+            response.put("status", "success");
+            response.put("message", "Returned " + appointments.size() + " doctor(s)");
+            response.put("appointments", appointments);
+            return ResponseEntity.ok(response);
+        } catch (Exception e){
+            response.put("message", "Error searching for appointments: " + e.getMessage());
+            response.put("doctors", List.of());
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    public ResponseEntity<Map<String, Object>> filterByCondition(String condition, Long id){
+        Map<String, Object> response = new HashMap<>();
+        try {
+            List<Appointment> appointments = appointmentRepository.findByPatientId(id);
+            response.put("status", "success");
+            if (condition.equals("past")){
+                List<Appointment> filteredAppointments = appointments.stream()
+                        .filter(appointment -> appointment.getStatus() == 1)
+                        .toList();
+                response.put("message", "Returned " + filteredAppointments.size() + " doctor(s)");
+                response.put("appointments", filteredAppointments);
+            } else if (condition.equals("future")) {
+                List<Appointment> filteredAppointments = appointments.stream()
+                        .filter(appointment -> appointment.getStatus() == 0)
+                        .toList();
+                response.put("message", "Returned " + filteredAppointments.size() + " doctor(s)");
+                response.put("appointments", filteredAppointments);
+            }
+            return ResponseEntity.ok(response);
+        } catch (Exception e){
+            response.put("message", "Error searching for appointments: " + e.getMessage());
+            response.put("doctors", List.of());
+            return ResponseEntity.ok(response);
+        }
+    }
 // 1. **Add @Service Annotation**:
 //    - The `@Service` annotation is used to mark this class as a Spring service component. 
 //    - It will be managed by Spring's container and used for business logic related to patients and appointments.

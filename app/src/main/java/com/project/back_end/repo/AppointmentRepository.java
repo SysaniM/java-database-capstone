@@ -1,10 +1,19 @@
 package com.project.back_end.repo;
 
+import com.project.back_end.models.Appointment;
+import jakarta.transaction.Transactional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
 import java.beans.Transient;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
-public interface AppointmentRepository  extends JpaRepository<Appointment, Long>  {
+public interface AppointmentRepository  extends JpaRepository<Appointment, Long> {
     @Query("SELECT DISTINCT a FROM Appointment a " +
            "LEFT JOIN FETCH a.doctor.availableTimes " +
            "WHERE a.doctor.id = :doctorId " +
