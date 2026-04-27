@@ -64,21 +64,31 @@ public class PatientService {
     public ResponseEntity<Map<String, Object>> filterByCondition(String condition, Long id){
         Map<String, Object> response = new HashMap<>();
         try {
-            List<Appointment> appointments = appointmentRepository.findByPatientId(id);
-            response.put("status", "success");
+            List<Appointment> appointments;
+
             if (condition.equals("past")){
-                List<Appointment> filteredAppointments = appointments.stream()
-                        .filter(appointment -> appointment.getStatus() == 1)
-                        .toList();
-                response.put("message", "Returned " + filteredAppointments.size() + " doctor(s)");
-                response.put("appointments", filteredAppointments);
-            } else if (condition.equals("future")) {
-                List<Appointment> filteredAppointments = appointments.stream()
-                        .filter(appointment -> appointment.getStatus() == 0)
-                        .toList();
-                response.put("message", "Returned " + filteredAppointments.size() + " doctor(s)");
-                response.put("appointments", filteredAppointments);
+                appointments = appointmentRepository.findByPatient_IdAndStatusOrderByAppointmentTimeAsc(id, 1);
+            } else{
+                appointments = appointmentRepository.findByPatient_IdAndStatusOrderByAppointmentTimeAsc(id, 0);
             }
+            response.put("status", "success");
+            response.put("message", "Returned " + appointments.size() + " doctor(s)");
+            response.put("appointments", appointments);
+            return ResponseEntity.ok(response);
+        } catch (Exception e){
+            response.put("message", "Error searching for appointments: " + e.getMessage());
+            response.put("doctors", List.of());
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    public ResponseEntity<Map<String, Object>> filterByDoctor(String name, Long patientId){
+        Map<String, Object> response = new HashMap<>();
+        try{
+            List<Appointment> appointments = appointmentRepository.filterByDoctorNameAndPatientId(name, patientId);
+            response.put("status", "success");
+            response.put("message", "Returned " + appointments.size() + " doctor(s)");
+            response.put("appointments", appointments);
             return ResponseEntity.ok(response);
         } catch (Exception e){
             response.put("message", "Error searching for appointments: " + e.getMessage());
