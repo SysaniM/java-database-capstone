@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Service
+@org.springframework.stereotype.Service
 public class PatientService {
     private final PatientService patientService;
     private final PatientRepository patientRepository;

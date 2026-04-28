@@ -19,7 +19,7 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Service
+@org.springframework.stereotype.Service
 public class DoctorService {
     private final DoctorRepository doctorRepository;
     private final AppointmentRepository appointmentRepository;

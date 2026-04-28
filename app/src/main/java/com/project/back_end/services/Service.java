@@ -16,7 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@Service
+@org.springframework.stereotype.Service
 public class Service {
     private final TokenService tokenService;
     private final AdminRepository adminRepository;
