@@ -3,6 +3,7 @@ package com.project.back_end.services;
 import com.project.back_end.repo.AdminRepository;
 import com.project.back_end.repo.DoctorRepository;
 import com.project.back_end.repo.PatientRepository;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -32,7 +33,8 @@ public class TokenService {
         return Jwts.builder()
                 .subject(identifier)
                 .issuedAt(issued)
-                .expiration(expire).signWith(getSigningKey());
+                .expiration(expire).signWith(getSigningKey())
+                .compact();
     }
 
     private SecretKey getSigningKey(){
@@ -43,7 +45,46 @@ public class TokenService {
     }
 
     public String extractIdentifier(String token){
-        return Jwts.parser(token);
+        Claims claims = Jwts.parser()
+                .setSigningKey(getSigningKey())// Provide the signing key for verification
+                .build()
+                .parseClaimsJws(token)    // Parse and verify the JWT
+                .getBody();                  // Get the payload (Claims)
+
+        // Extract your custom identifier
+        // Replace "userId" with the actual claim name used when creating the token
+        return claims.get("userId", String.class);
+    }
+
+    public boolean validateToken(String token, String user){
+        String userIdentifier = extractIdentifier(token);
+        boolean response;
+        switch (user){
+            case "admin":
+                if(adminRepository.findByUsername(userIdentifier) == null){
+                    response = false;
+                } else {
+                    response = true;
+                }
+                break;
+            case "doctor":
+                if(doctorRepository.findByEmail(userIdentifier) == null){
+                    response = false;
+                } else {
+                    response = true;
+                }
+                break;
+            case "patient":
+                if(patientRepository.findByEmail(userIdentifier) == null){
+                    response = false;
+                } else {
+                    response = true;
+                }
+                break;
+            default:
+                response = false;
+        }
+        return response;
     }
 // 1. **@Component Annotation**
 // The @Component annotation marks this class as a Spring component, meaning Spring will manage it as a bean within its application context.
