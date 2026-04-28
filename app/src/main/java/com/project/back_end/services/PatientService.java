@@ -5,6 +5,7 @@ import com.project.back_end.models.Doctor;
 import com.project.back_end.models.Patient;
 import com.project.back_end.repo.AppointmentRepository;
 import com.project.back_end.repo.PatientRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,10 +16,10 @@ import java.util.stream.Collectors;
 
 @Service
 public class PatientService {
-    private  PatientService patientService;
-    private PatientRepository patientRepository;
-    private AppointmentRepository appointmentRepository;
-    private TokenService tokenService;
+    private final PatientService patientService;
+    private final PatientRepository patientRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final TokenService tokenService;
 
     public PatientService(PatientService patientService,
                           PatientRepository patientRepository,
@@ -39,8 +40,6 @@ public class PatientService {
                 return 0;
             }
         } catch (Exception e) {
-            // Log the exception (in production, use proper logging)
-            System.err.println("Error saving patient: " + e.getMessage());
             return 0;
         }
     }
@@ -49,15 +48,25 @@ public class PatientService {
     public ResponseEntity<Map<String, Object>> getPatientAppointment(Long id, String token){
         Map<String, Object> response = new HashMap<>();
         try{
+            Patient patient = patientRepository.findById(id).orElse(null);
+            if (patient == null){
+                response.put("message", "Patient not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+            if (!tokenService.extractIdentifier(token).equals(patient.getEmail())){
+                response.put("message", "Invalid token");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+
             List<Appointment> appointments = appointmentRepository.findByPatientId(id);
-            response.put("status", "success");
             response.put("message", "Returned " + appointments.size() + " doctor(s)");
             response.put("appointments", appointments);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e){
             response.put("message", "Error searching for appointments: " + e.getMessage());
-            response.put("doctors", List.of());
-            return ResponseEntity.ok(response);
+            response.put("appointments", List.of());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
@@ -71,14 +80,12 @@ public class PatientService {
             } else{
                 appointments = appointmentRepository.findByPatient_IdAndStatusOrderByAppointmentTimeAsc(id, 0);
             }
-            response.put("status", "success");
-            response.put("message", "Returned " + appointments.size() + " doctor(s)");
             response.put("appointments", appointments);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e){
             response.put("message", "Error searching for appointments: " + e.getMessage());
-            response.put("doctors", List.of());
-            return ResponseEntity.ok(response);
+            response.put("appointments", List.of());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
@@ -86,14 +93,12 @@ public class PatientService {
         Map<String, Object> response = new HashMap<>();
         try{
             List<Appointment> appointments = appointmentRepository.filterByDoctorNameAndPatientId(name, patientId);
-            response.put("status", "success");
-            response.put("message", "Returned " + appointments.size() + " doctor(s)");
             response.put("appointments", appointments);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e){
             response.put("message", "Error searching for appointments: " + e.getMessage());
-            response.put("doctors", List.of());
-            return ResponseEntity.ok(response);
+            response.put("appointments", List.of());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
@@ -107,22 +112,33 @@ public class PatientService {
                 appointments = appointmentRepository.filterByDoctorNameAndPatientIdAndStatus(name, patientId, 0);
             }
 
-            response.put("status", "success");
-            response.put("message", "Returned " + appointments.size() + " doctor(s)");
             response.put("appointments", appointments);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e){
             response.put("message", "Error searching for appointments: " + e.getMessage());
-            response.put("doctors", List.of());
-            return ResponseEntity.ok(response);
+            response.put("appointments", List.of());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
     public ResponseEntity<Map<String, Object>> getPatientDetails(String token){
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Error searching for appointments: ");
-        response.put("doctors", List.of());
-        return ResponseEntity.ok(response);
+        try {
+            String patientEmail = tokenService.extractIdentifier(token);
+            Patient patient = patientRepository.findByEmail(patientEmail);
+            if (patient == null){
+                response.put("message", "Patient not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+            response.put("name", patient.getName());
+            response.put("email", patient.getEmail());
+            response.put("phone", patient.getPhone());
+            response.put("address", patient.getAddress());
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        } catch (Exception e) {
+            response.put("message", "Error getting patient details: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 // 1. **Add @Service Annotation**:
 //    - The `@Service` annotation is used to mark this class as a Spring service component. 

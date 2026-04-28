@@ -1,6 +1,213 @@
 package com.project.back_end.services;
 
+import com.project.back_end.DTO.Login;
+import com.project.back_end.models.Admin;
+import com.project.back_end.models.Appointment;
+import com.project.back_end.models.Doctor;
+import com.project.back_end.models.Patient;
+import com.project.back_end.repo.AdminRepository;
+import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.PatientRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.time.LocalTime;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
 public class Service {
+    private final TokenService tokenService;
+    private final AdminRepository adminRepository;
+    private final DoctorRepository doctorRepository;
+    private final PatientRepository patientRepository;
+    private final DoctorService doctorService;
+    private final PatientService patientService;
+
+    public Service(TokenService tokenService,
+                   AdminRepository adminRepository,
+                   DoctorRepository  doctorRepository,
+                   PatientRepository patientRepository,
+                   DoctorService doctorService,
+                   PatientService patientService){
+        this.tokenService = tokenService;
+        this.adminRepository = adminRepository;
+        this.doctorRepository = doctorRepository;
+        this.patientRepository = patientRepository;
+        this.doctorService = doctorService;
+        this.patientService = patientService;
+    }
+
+    public ResponseEntity<Map<String, String>> validateToken(String token, String user){
+        Map<String, String> response = new LinkedHashMap<>();
+        try{
+            if (tokenService.validateToken(token, user)){
+                response.put("message", "Token valid");
+                response.put("status", "success");
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+            } else {
+                response.put("message", "Token is invalid");
+                response.put("status", "failure");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+        } catch (Exception e){
+            response.put("message", "Error validating token: " + e.getMessage());
+            response.put("status", "failure");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    public ResponseEntity<Map<String, String>> validateAdmin(Admin recievedAdmin){
+        Map<String, String> response = new LinkedHashMap<>();
+        try{
+            Admin storedAdmin = adminRepository.findByUsername(recievedAdmin.getUsername());
+            if (storedAdmin == null){
+                response.put("message", "Admin is not found");
+                response.put("status", "failure");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+
+            if (!recievedAdmin.getPassword().equals(storedAdmin.getPassword())){
+                response.put("message", "Wrong password");
+                response.put("status", "failure");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            response.put("message", "Validation successful");
+            response.put("status", "success");
+            response.put("token",tokenService.generateToken(recievedAdmin.getUsername()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        } catch (Exception e){
+            response.put("message", "Error validating admin: " + e.getMessage());
+            response.put("status", "failure");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    public Map<String, Object> filterDoctor(String name, String specialty, String time){
+        Map<String, Object> response = new LinkedHashMap<>();
+        try {
+            List<Doctor> doctors;
+            if (name.isEmpty() && specialty.isEmpty() && time.isEmpty()){
+                doctors = doctorService.getDoctors();
+                response.put("status", "success");
+                response.put("count", doctors.size());
+                response.put("doctors", doctors);
+
+            } else if (name.isEmpty() && !specialty.isEmpty() && !time.isEmpty()) {
+                response.put("status", "success");
+                response.put("doctors", doctorService.filterDoctorByTimeAndSpeciality(specialty,time).get("doctors"));
+            }
+            else if (!name.isEmpty() && specialty.isEmpty() && !time.isEmpty()) {
+                response.put("status", "success");
+                response.put("doctors", doctorService.filterDoctorByNameAndTime(name,time).get("doctors"));
+            }
+            else if (!name.isEmpty() && !specialty.isEmpty() && time.isEmpty()) {
+                response.put("status", "success");
+                response.put("doctors", doctorService.filterDoctorByNameAndSpeciality(name,specialty).get("doctors"));
+            }
+            else if (name.isEmpty() && specialty.isEmpty() && !time.isEmpty()) {
+                response.put("status", "success");
+                response.put("doctors", doctorService.filterDoctorByTime(time).get("doctors"));
+            }
+            else if (name.isEmpty() && !specialty.isEmpty() && time.isEmpty()) {
+                response.put("status", "success");
+                response.put("doctors", doctorService.filterDoctorBySpeciality(specialty).get("doctors"));
+            }
+            else if (!name.isEmpty() && specialty.isEmpty() && time.isEmpty()) {
+                response.put("status", "success");
+                response.put("doctors", doctorService.findDoctorByName(name).get("doctors"));
+            }
+            else {
+                response.put("status", "success");
+                response.put("doctors", doctorService.filterDoctorByNameSpecialityAndTime(name, specialty, time));
+            }
+            return response;
+        } catch (Exception e){
+            response.put("message", "Error filtering doctors: " + e.getMessage());
+            response.put("status", "failure");
+            return response;
+        }
+    }
+
+    public int validateAppointment(Appointment appointment){
+        try{
+            Long doctorId = appointment.getDoctor().getId();
+            if (!doctorRepository.existsById(doctorId)){
+                return -1;
+            }
+
+            List<String> availableSlots = doctorService.getDoctorAvailability(doctorId,appointment.getAppointmentDate());
+            List<LocalTime> timeSlots = availableSlots.stream().map(slot -> LocalTime.parse(slot)).toList();
+            if(!timeSlots.contains(appointment.getAppointmentTimeOnly())){
+                return 0;
+            }
+            return 1;
+        }   catch (Exception e){
+            System.out.println("Error validating appointment:" + e.getMessage());
+            return 0;
+        }
+    }
+
+    public boolean validatePatient(Patient patient){
+        try {
+            return patientRepository.findByEmail(patient.getEmail()) == null;
+        }   catch (Exception e) {
+            System.out.println("Error validating patient:" + e.getMessage());
+            return false;
+        }
+    }
+
+    public ResponseEntity<Map<String, String>> validatePatientLogin(Login login){
+        Map<String, String> response = new LinkedHashMap<>();
+        try{
+            Patient storedPatient = patientRepository.findByEmail(login.getEmail());
+            if (storedPatient == null){
+                response.put("message", "Patient is not found");
+                response.put("status", "failure");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+
+            if (!login.getPassword().equals(storedPatient.getPassword())){
+                response.put("message", "Wrong password");
+                response.put("status", "failure");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            response.put("message", "Validation successful");
+            response.put("status", "success");
+            response.put("token",tokenService.generateToken(login.getEmail()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        } catch (Exception e){
+            response.put("message", "Error validating patient: " + e.getMessage());
+            response.put("status", "failure");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    public ResponseEntity<Map<String, Object>> filterPatient(String condition, String name, String token){
+        Map<String, Object> response = new LinkedHashMap<>();
+        try {
+            Long patientId = patientRepository.findByEmail(tokenService.extractIdentifier(token)).getId();
+            if (condition.isEmpty() && name.isEmpty()){
+                response.put("status", "success");
+                response.put("appointments", patientService.getPatientAppointment(patientId, token));
+            } else if (!condition.isEmpty() && name.isEmpty()) {
+                response.put("status", "success");
+                response.put("appointments", patientService.filterByCondition(condition,patientId));
+            } else if (condition.isEmpty() && !name.isEmpty()) {
+                response.put("status", "success");
+                response.put("appointments", patientService.filterByDoctor(name,patientId));
+            } else {
+                response.put("status", "success");
+                response.put("appointments", patientService.filterByDoctorAndCondition(condition,name,patientId));
+            }
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        } catch (Exception e){
+            response.put("message", "Error filtering doctors: " + e.getMessage());
+            response.put("status", "failure");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
 // 1. **@Service Annotation**
 // The @Service annotation marks this class as a service component in Spring. This allows Spring to automatically detect it through component scanning
 // and manage its lifecycle, enabling it to be injected into controllers or other services using @Autowired or constructor injection.

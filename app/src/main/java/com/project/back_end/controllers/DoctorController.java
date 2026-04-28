@@ -1,8 +1,131 @@
 package com.project.back_end.controllers;
 
+import com.project.back_end.DTO.Login;
+import com.project.back_end.models.Doctor;
+import com.project.back_end.services.DoctorService;
+import com.project.back_end.services.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("${api.path}doctor")
 public class DoctorController {
+    private final DoctorService doctorService;
+    private final Service service;
 
+    @Autowired
+    public DoctorController(DoctorService doctorService,
+                            Service service){
+        this.doctorService = doctorService;
+        this.service = service;
+    }
+
+    @GetMapping("/availability/{user}/{doctorId}/{date}/{token}")
+    public Map<String, Object> getDoctorAvailability(@PathVariable String user,
+                                                     @PathVariable long doctorId,
+                                                     @PathVariable LocalDate date,
+                                                     @PathVariable String token){
+        Map<String, Object> response = new LinkedHashMap<>();
+        if (!Service.validateToken(token, user)){
+            response.put("message", "Invalid token");
+            return response;
+        }
+
+        response.put("availability", doctorService.getDoctorAvailability(doctorId, date));
+        return response;
+    }
+
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> getDoctor(){
+        Map<String, Object> response= new LinkedHashMap<>();
+        response.put("doctors", doctorService.getDoctors());
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PostMapping("/{token}")
+    public ResponseEntity<Map<String, Object>> saveDoctor(Doctor doctor,
+                                                          @PathVariable String token){
+        Map<String, Object> response = new LinkedHashMap<>();
+
+        if (!Service.validateToken(token, "admin")) {
+            response.put("message", "Invalid token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        switch(doctorService.saveDoctor(doctor)){
+            case(1):
+                response.put("message", "Doctor added to db");
+                return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            case(-1):
+                response.put("message", "Doctor already exists");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+            default:
+                response.put("message", "Some internal error occurred");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, String>> doctorLogin(@PathVariable Login login){
+        return doctorService.validateDoctor(login);
+    }
+
+    @PutMapping("/{token}")
+    public ResponseEntity<Map<String, String>> updateDoctor(Doctor doctor,
+                                                            @PathVariable String token){
+        Map<String, String> response = new LinkedHashMap<>();
+        if (!Service.validateToken(token, "admin")) {
+            response.put("message", "Invalid token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        switch(doctorService.updateDoctor(doctor)){
+            case(1):
+                response.put("message", "Doctor updated");
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+            case(-1):
+                response.put("message", "Doctor not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            default:
+                response.put("message", "Some internal error occurred");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @DeleteMapping("/{id}/{token}")
+    public ResponseEntity<Map<String, String>> deleteDoctor(@PathVariable long id,
+                                                            @PathVariable String token){
+        Map<String, String> response = new LinkedHashMap<>();
+        if (!Service.validateToken(token, "admin")) {
+            response.put("message", "Invalid token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        switch(doctorService.deleteDoctor(id)){
+            case(1):
+                response.put("message", "Doctor deleted successfully");
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+            case(-1):
+                response.put("message", "Doctor not found with id");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            default:
+                response.put("message", "Some internal error occurred");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @GetMapping("/filter/{name}/{time}/{speciality}")
+    public Map<String, Object> filterDoctors(@PathVariable String name,
+                                             @PathVariable String time,
+                                             @PathVariable String speciality){
+        return service.filterDoctor(name, speciality, time);
+    }
 // 1. Set Up the Controller Class:
 //    - Annotate the class with `@RestController` to define it as a REST controller that serves JSON responses.
 //    - Use `@RequestMapping("${api.path}doctor")` to prefix all endpoints with a configurable API path followed by "doctor".

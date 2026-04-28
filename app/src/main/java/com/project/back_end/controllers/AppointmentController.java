@@ -1,7 +1,102 @@
 package com.project.back_end.controllers;
 
+import com.project.back_end.models.Appointment;
+import com.project.back_end.services.AppointmentService;
+import com.project.back_end.services.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/appointments")
 public class AppointmentController {
+    private final AppointmentService appointmentService;
+    private final Service service;
+
+    @Autowired
+    public AppointmentController(AppointmentService appointmentService,
+                                 Service service){
+        this.appointmentService = appointmentService;
+        this.service = service;
+    }
+
+    @GetMapping("/{date}/{patientName}/{token}")
+    public ResponseEntity<Map<String, Object>> getAppointments(@PathVariable LocalDate date,
+                                                               @PathVariable String patientName,
+                                                               @PathVariable String token){
+        Map<String, Object> response = new LinkedHashMap<> ();
+        if (!Service.validateToken(token, "doctor")){
+            response.put("message", "Invalid token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        response = appointmentService.getAppointments(patientName, date, token);
+        if (response.containsKey("message")){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }
+    }
+
+    @PostMapping("/{token}")
+    public ResponseEntity<Map<String, String>> bookAppointments(Appointment appointment,
+                                                                @PathVariable String token){
+        Map<String, String> response = new LinkedHashMap<> ();
+        if (!Service.validateToken(token, "patient")){
+            response.put("message", "Invalid token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        switch (service.validateAppointment(appointment)){
+            case (-1):
+                response.put("message", "Doctor doesn't exist");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            case (0):
+                response.put("message", "Time is unavailable");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            case (1):
+                int result = appointmentService.bookAppointment(appointment);
+                if (result == 0){
+                    response.put("message", "Error saving appointment");
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+                } else {
+                    response.put("message", "Booking is successful");
+                    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+                }
+            default:
+                response.put("message", "Error saving appointment");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @PutMapping("/{token}")
+    public ResponseEntity<Map<String, String>> updateAppointment(@PathVariable String token,
+                                                                 Appointment appointment){
+        Map<String, String> response = new LinkedHashMap<> ();
+        if (!Service.validateToken(token, "patient")){
+            response.put("message", "Invalid token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        return appointmentService.updateAppointment(appointment);
+    }
+
+    @DeleteMapping("/{id}/{token}")
+    public ResponseEntity<Map<String, String>> cancelAppointment(@PathVariable long id,
+                                                                 @PathVariable String token){
+        Map<String, String> response = new LinkedHashMap<> ();
+        if (!Service.validateToken(token, "patient")){
+            response.put("message", "Invalid token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        return appointmentService.cancelAppointment(id, token);
+    }
 
 // 1. Set Up the Controller Class:
 //    - Annotate the class with `@RestController` to define it as a REST API controller.

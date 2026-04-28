@@ -11,7 +11,7 @@ import java.util.Map;
 
 @Service
 public class PrescriptionService {
-    private PrescriptionRepository prescriptionRepository;
+    private final PrescriptionRepository prescriptionRepository;
 
     public PrescriptionService(PrescriptionRepository prescriptionRepository){
         this.prescriptionRepository = prescriptionRepository;
@@ -22,16 +22,14 @@ public class PrescriptionService {
         try{
             if (prescriptionRepository.findById(prescription.getId()).isEmpty()) {
                 response.put("message", "Prescription already exist");
-                response.put("status", "failure");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
             }
+
             prescriptionRepository.save(prescription);
             response.put("message", "Prescription saved");
-            response.put("status", "success");
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e){
             response.put("message", "Error saving prescription: " + e.getMessage());
-            response.put("status", "failure");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
@@ -42,16 +40,13 @@ public class PrescriptionService {
             List<Prescription> prescription = prescriptionRepository.findByAppointmentId(appointmentId);
             if (prescription.isEmpty()){
                 response.put("message", "Prescription doesn't exist");
-                response.put("status", "failure");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
             }
-            response.put("status", "success");
-            response.put("message", "Returned prescription related to appointment id: " + appointmentId);
+
             response.put("prescription", prescription);
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e){
             response.put("message", "Error getting prescription: " + e.getMessage());
-            response.put("status", "failure");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }

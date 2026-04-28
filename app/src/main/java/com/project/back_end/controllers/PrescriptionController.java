@@ -1,7 +1,60 @@
 package com.project.back_end.controllers;
 
+import com.project.back_end.models.Doctor;
+import com.project.back_end.models.Prescription;
+import com.project.back_end.services.AppointmentService;
+import com.project.back_end.services.PrescriptionService;
+import com.project.back_end.services.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("{$api.path}prescription")
 public class PrescriptionController {
-    
+    private final PrescriptionService prescriptionService;
+    private final Service service;
+    private final AppointmentService appointmentService;
+
+    @Autowired
+    public PrescriptionController(PrescriptionService prescriptionService,
+                                  Service service,
+                                  AppointmentService appointmentService){
+        this.prescriptionService = prescriptionService;
+        this.service = service;
+        this.appointmentService = appointmentService;
+    }
+
+    @PostMapping("/{token}")
+    public ResponseEntity<Map<String, String>> savePrescription(@PathVariable String token,
+                                                                Prescription prescription) {
+        Map<String, String> response = new LinkedHashMap<>();
+
+        if (!Service.validateToken(token, "doctor")) {
+            response.put("message", "Invalid token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        return prescriptionService.savePrescription(prescription);
+    }
+
+    @GetMapping("/{appointment}/{token}")
+    public ResponseEntity<Map<String, Object>> getPrescription(@PathVariable long appointmentId,
+                                                               @PathVariable String token){
+        Map<String, Object> response = new LinkedHashMap<>();
+
+        if (!Service.validateToken(token, "doctor")) {
+            response.put("message", "Invalid token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+        return prescriptionService.getPrescription(appointmentId);
+    }
+
+
 // 1. Set Up the Controller Class:
 //    - Annotate the class with `@RestController` to define it as a REST API controller.
 //    - Use `@RequestMapping("${api.path}prescription")` to set the base path for all prescription-related endpoints.

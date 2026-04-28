@@ -21,9 +21,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class DoctorService {
-    private DoctorRepository doctorRepository;
-    private AppointmentRepository appointmentRepository;
-    private TokenService tokenService;
+    private final DoctorRepository doctorRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final TokenService tokenService;
 
     public DoctorService(DoctorRepository doctorRepository,
                          AppointmentRepository appointmentRepository,
@@ -71,11 +71,9 @@ public class DoctorService {
                 doctorRepository.save(doctor);
                 return 1; // Success
             } else{
-                return 0;
+                return -1;
             }
         } catch (Exception e) {
-            // Log the exception (in production, use proper logging)
-            System.err.println("Error saving doctor: " + e.getMessage());
             return 0;
         }
     }
@@ -92,7 +90,6 @@ public class DoctorService {
             doctorRepository.save(doctor);
             return 1;
         } catch (Exception e){
-            System.err.println("Error updating doctor: " + e.getMessage());
             return 0;
         }
     }
@@ -102,7 +99,6 @@ public class DoctorService {
         try {
             return doctorRepository.findAll();
         } catch (Exception e){
-            System.err.println("Error getting doctors: " + e.getMessage());
             return List.of();
         }
     }
@@ -120,45 +116,33 @@ public class DoctorService {
             doctorRepository.deleteById(id);
             return 1;
         } catch (Exception e){
-            System.err.println("Error deleting doctor: " + e.getMessage());
             return 0;
         }
     }
     @Transactional
     public ResponseEntity<Map<String, String>> validateDoctor(Login login){
-        // Find doctor by email
-        Doctor doctor = doctorRepository.findByEmail(login.getEmail());
+        Map<String, String> response = new HashMap<>();
+        try {
+            Doctor doctor = doctorRepository.findByEmail(login.getEmail());
 
-        // Check if doctor exists and password matches
-        if (doctor != null && doctor.getPassword().equals(login.getPassword())) {
-            // Generate token (JWT or similar)
-            String token = generateTokenForDoctor(doctor);
-
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Login successful");
-            response.put("token", token);
-
-            return ResponseEntity.ok(response);
-        } else {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Invalid email or password");
-
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            // Check if doctor exists and password matches
+            if (doctor == null) {
+                response.put("message", "Invalid email");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            } else if (doctor.getPassword().equals(login.getPassword())){
+                response.put("message", "Invalid password");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            } else {
+                String token = tokenService.generateToken(doctor.getEmail());
+                response.put("message", "Login successful");
+                response.put("token", token);
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+            }
+        } catch (Exception e){
+            response.put("message", "Error updating appointment: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-
-    // Helper method to generate token (example using JWT)
-    private String generateTokenForDoctor(Doctor doctor) {
-        // Implement your token generation logic
-        // Example using JJWT:
-        return Jwts.builder()
-                .setSubject(doctor.getEmail())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000)) // 24 hours
-                .signWith(SignatureAlgorithm.HS256, "yourSecretKey")
-                .compact();
-    }
-
 
     @Transactional
     public Map<String, Object> findDoctorByName(String name){
@@ -188,10 +172,7 @@ public class DoctorService {
 
         try {
             // Step 1: Filter doctors by name and specialty using repository method
-            List<Doctor> doctors = doctorRepository.findByNameContainingIgnoreCaseAndSpecialtyIgnoreCase(
-                    name != null ? name : "",
-                    specialty != null ? specialty : ""
-            );
+            List<Doctor> doctors = doctorRepository.findByNameContainingIgnoreCaseAndSpecialtyIgnoreCase(name,specialty);
 
             // Step 2: Further filter by availability time (AM/PM)
             List<Doctor> filteredDoctors = doctors.stream()
@@ -199,20 +180,10 @@ public class DoctorService {
                     .collect(Collectors.toList());
 
             // Prepare response
-            response.put("status", "success");
-            response.put("message", "Filtered " + filteredDoctors.size() + " doctor(s)");
-            response.put("filters", Map.of(
-                    "name", name != null ? name : "any",
-                    "specialty", specialty != null ? specialty : "any",
-                    "timeSlot", amOrPm != null ? amOrPm : "any"
-            ));
-            response.put("count", filteredDoctors.size());
             response.put("doctors", filteredDoctors);
 
         } catch (Exception e) {
-            response.put("status", "error");
-            response.put("message", "Error filtering doctors: " + e.getMessage());
-            response.put("count", 0);
+            response.put("message", "Error searching for doctors: " + e.getMessage());
             response.put("doctors", new ArrayList<>());
         }
 
@@ -252,29 +223,18 @@ public class DoctorService {
         Map<String, Object> response = new LinkedHashMap<>();
 
         try {
-            // Step 1: Filter doctors by name and specialty using repository method
-            List<Doctor> doctors = doctorRepository.findByNameLike(
-                    name != null ? name : "");
+            // Step 1: Filter doctors by name using repository method
+            List<Doctor> doctors = doctorRepository.findByNameLike(name);
 
             // Step 2: Further filter by availability time (AM/PM)
             List<Doctor> filteredDoctors = doctors.stream()
                     .filter(doctor -> isDoctorAvailableDuringTime(doctor, amOrPm))
                     .collect(Collectors.toList());
 
-            // Prepare response
-            response.put("status", "success");
-            response.put("message", "Filtered " + filteredDoctors.size() + " doctor(s)");
-            response.put("filters", Map.of(
-                    "name", name != null ? name : "any",
-                    "timeSlot", amOrPm != null ? amOrPm : "any"
-            ));
-            response.put("count", filteredDoctors.size());
             response.put("doctors", filteredDoctors);
 
         } catch (Exception e) {
-            response.put("status", "error");
             response.put("message", "Error filtering doctors: " + e.getMessage());
-            response.put("count", 0);
             response.put("doctors", new ArrayList<>());
         }
 
@@ -293,19 +253,10 @@ public class DoctorService {
             );
 
             // Prepare response
-            response.put("status", "success");
-            response.put("message", "Filtered " + doctors.size() + " doctor(s)");
-            response.put("filters", Map.of(
-                    "name", name != null ? name : "any",
-                    "specialty", specialty != null ? specialty : "any"
-            ));
-            response.put("count", doctors.size());
             response.put("doctors", doctors);
 
         } catch (Exception e) {
-            response.put("status", "error");
             response.put("message", "Error filtering doctors: " + e.getMessage());
-            response.put("count", 0);
             response.put("doctors", new ArrayList<>());
         }
 
@@ -317,7 +268,7 @@ public class DoctorService {
         Map<String, Object> response = new LinkedHashMap<>();
 
         try {
-            // Step 1: Filter doctors by name and specialty using repository method
+            // Step 1: Filter doctors by specialty using repository method
             List<Doctor> doctors = doctorRepository.findBySpecialtyIgnoreCase(
                     specialty != null ? specialty : ""
             );
@@ -328,19 +279,10 @@ public class DoctorService {
                     .collect(Collectors.toList());
 
             // Prepare response
-            response.put("status", "success");
-            response.put("message", "Filtered " + filteredDoctors.size() + " doctor(s)");
-            response.put("filters", Map.of(
-                    "specialty", specialty != null ? specialty : "any",
-                    "timeSlot", amOrPm != null ? amOrPm : "any"
-            ));
-            response.put("count", filteredDoctors.size());
             response.put("doctors", filteredDoctors);
 
         } catch (Exception e) {
-            response.put("status", "error");
             response.put("message", "Error filtering doctors: " + e.getMessage());
-            response.put("count", 0);
             response.put("doctors", new ArrayList<>());
         }
 
@@ -352,24 +294,16 @@ public class DoctorService {
         Map<String, Object> response = new LinkedHashMap<>();
 
         try {
-            // Step 1: Filter doctors by name and specialty using repository method
+            // Step 1: Filter doctors by specialty using repository method
             List<Doctor> doctors = doctorRepository.findBySpecialtyIgnoreCase(
                     specialty != null ? specialty : ""
             );
 
             // Prepare response
-            response.put("status", "success");
-            response.put("message", "Filtered " + doctors.size() + " doctor(s)");
-            response.put("filters", Map.of(
-                    "specialty", specialty != null ? specialty : "any"
-            ));
-            response.put("count", doctors.size());
             response.put("doctors", doctors);
 
         } catch (Exception e) {
-            response.put("status", "error");
             response.put("message", "Error filtering doctors: " + e.getMessage());
-            response.put("count", 0);
             response.put("doctors", new ArrayList<>());
         }
 
@@ -388,18 +322,10 @@ public class DoctorService {
                     .collect(Collectors.toList());
 
             // Prepare response
-            response.put("status", "success");
-            response.put("message", "Filtered " + filteredDoctors.size() + " doctor(s)");
-            response.put("filters", Map.of(
-                    "timeSlot", amOrPm != null ? amOrPm : "any"
-            ));
-            response.put("count", filteredDoctors.size());
             response.put("doctors", filteredDoctors);
 
         } catch (Exception e) {
-            response.put("status", "error");
             response.put("message", "Error filtering doctors: " + e.getMessage());
-            response.put("count", 0);
             response.put("doctors", new ArrayList<>());
         }
 

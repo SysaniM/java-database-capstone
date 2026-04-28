@@ -1,6 +1,50 @@
 package com.project.back_end.services;
 
+import com.project.back_end.repo.AdminRepository;
+import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.PatientRepository;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+
+@Component
 public class TokenService {
+    private final AdminRepository adminRepository;
+    private final DoctorRepository doctorRepository;
+    private final PatientRepository patientRepository;
+
+    public TokenService(AdminRepository adminRepository,
+                        DoctorRepository doctorRepository,
+                        PatientRepository patientRepository){
+        this.adminRepository = adminRepository;
+        this.doctorRepository = doctorRepository;
+        this.patientRepository = patientRepository;
+    }
+
+    public String generateToken(String identifier){
+        Date issued = new Date();
+        Date expire= new Date(issued.getTime() + 7 * 24 * 60 * 60 * 1000);
+        return Jwts.builder()
+                .subject(identifier)
+                .issuedAt(issued)
+                .expiration(expire).signWith(getSigningKey());
+    }
+
+    private SecretKey getSigningKey(){
+        String secret = "Aboba";
+
+        // Convert string secret to HMAC SHA key
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public String extractIdentifier(String token){
+        return Jwts.parser(token);
+    }
 // 1. **@Component Annotation**
 // The @Component annotation marks this class as a Spring component, meaning Spring will manage it as a bean within its application context.
 // This allows the class to be injected into other Spring-managed components (like services or controllers) where it's needed.
