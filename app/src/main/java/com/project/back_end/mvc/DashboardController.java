@@ -1,19 +1,26 @@
 package com.project.back_end.mvc;
 
+import com.project.back_end.services.Service;
+import com.project.back_end.services.TokenService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
 @Controller
 public class DashboardController {
 
-    private final Service sharedService;
+    private final TokenService tokenService;
 
     @Autowired
-    public DashboardController(Service sharedService) {
-        this.sharedService = sharedService;
+    public DashboardController(TokenService tokenService) {
+        this.tokenService = tokenService;
     }
 
     @GetMapping("/adminDashboard/{token}")
     public String adminDashboard(@PathVariable String token) {
         // Validate the token for admin role
-        boolean isValid = sharedService.validateToken(token, "admin");
+        boolean isValid = tokenService.validateToken(token, "admin");
         
         if (isValid) {
             // Forward to admin dashboard view
@@ -27,7 +34,7 @@ public class DashboardController {
     @GetMapping("/doctorDashboard/{token}")
     public String doctorDashboard(@PathVariable String token) {
         // Validate the token for doctor role
-        boolean isValid = sharedService.validateToken(token, "doctor");
+        boolean isValid = tokenService.validateToken(token, "doctor");
         
         if (isValid) {
             // Forward to doctor dashboard view
