@@ -10,17 +10,17 @@ import org.springframework.web.bind.annotation.PathVariable;
 @Controller
 public class DashboardController {
 
-    private final TokenService tokenService;
+    private final Service sharedService;
 
     @Autowired
-    public DashboardController(TokenService tokenService) {
-        this.tokenService = tokenService;
+    public DashboardController(Service sharedService) {
+        this.sharedService = sharedService;
     }
 
     @GetMapping("/adminDashboard/{token}")
     public String adminDashboard(@PathVariable String token) {
         // Validate the token for admin role
-        boolean isValid = tokenService.validateToken(token, "admin");
+        boolean isValid = sharedService.validateToken(token, "admin");
         
         if (isValid) {
             // Forward to admin dashboard view
@@ -34,7 +34,7 @@ public class DashboardController {
     @GetMapping("/doctorDashboard/{token}")
     public String doctorDashboard(@PathVariable String token) {
         // Validate the token for doctor role
-        boolean isValid = tokenService.validateToken(token, "doctor");
+        boolean isValid = sharedService.validateToken(token, "doctor");
         
         if (isValid) {
             // Forward to doctor dashboard view
